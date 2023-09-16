@@ -98,7 +98,7 @@ async function genCode(json) {
     let midLayer = [];
 
     for (let path in openapi.paths) {
-      if (path.startsWith(json["module"])) continue;
+      if (!path.startsWith(json["module"])) continue;
       for (let method in openapi.paths[path]) {
         const operation = openapi.paths[path][method];
         const t1 = operation["tags"][0].replace("Controller", "").split("/");
