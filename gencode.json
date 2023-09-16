@@ -1,4 +1,4 @@
 {
   "url": "http://0.0.0.0:8000/api/docs/openapi",
-  "module": "/admin"
+  "module": "/company/"
 }

@@ -105,7 +105,7 @@ async function genCode(json) {
         const moduleName = t1[0];
         const controllerName = t1[1];
         // console.log(moduleName, controllerName);
-        if (moduleName !== "Admin") continue;
+        // if (moduleName !== "Admin") continue;
         const requestBody = operation.requestBody;
 
         if (!midLayer[controllerName]) midLayer[controllerName] = {};
