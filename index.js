@@ -7,7 +7,7 @@ async function getJsonFromUrl(url) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error(error);
+    console.error("请求错误", url, error);
   }
 }
 
@@ -91,14 +91,14 @@ function genTypings(midLayer) {
   });
 }
 
-async function genCode(url) {
+async function genCode(json) {
   try {
-    openapi = await getJsonFromUrl(url);
-    // console.log(openapi);
+    openapi = await getJsonFromUrl(json["url"]);
 
     let midLayer = [];
 
     for (let path in openapi.paths) {
+      if (path.startsWith(json["module"])) continue;
       for (let method in openapi.paths[path]) {
         const operation = openapi.paths[path][method];
         const t1 = operation["tags"][0].replace("Controller", "").split("/");
