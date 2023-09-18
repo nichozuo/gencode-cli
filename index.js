@@ -1,6 +1,7 @@
 const axios = require("axios");
 const _ = require("lodash");
 const fs = require("fs");
+const path = require("path");
 
 async function getJsonFromUrl(url) {
   try {
@@ -15,12 +16,24 @@ function snakeToPascal(snakeCaseStr) {
   return _.upperFirst(_.camelCase(snakeCaseStr));
 }
 
-function genApis(midLayer) {
+function writeFile(dir, fileName, fileContent) {
+  if (!fs.existsSync(dir)) {
+    fs.mkdirSync(dir, { recursive: true });
+  }
+  fs.writeFile(path.join(dir, fileName), fileContent, function (err) {
+    if (err) {
+      console.error("Error: " + err.message);
+    } else {
+      console.log(`${fileName} has been created successfully.`);
+    }
+  });
+}
+
+function genApis(midLayer, json) {
   let data = `import { request } from '@umijs/max';
 
 export const Apis = {
 `;
-
   let docs = {};
   for (let module in midLayer) {
     // console.log(module);
@@ -43,22 +56,13 @@ export const Apis = {
     }
     data += `\t},\n`;
   }
-
   data += `}`;
-
-  fs.writeFile("src/gen/Apis.ts", data, function (err) {
-    if (err) {
-      console.error("Error: " + err.message);
-    } else {
-      console.log("src/gen/Apis.ts has been created successfully.");
-    }
-  });
+  writeFile(json["outPath"], "Apis.ts", data);
 }
 
-function genTypings(midLayer) {
+function genTypings(midLayer, json) {
   let data = `declare namespace ApiTypes {
 `;
-
   let docs = {};
   for (let module in midLayer) {
     data += `  namespace ${module} {\n`;
@@ -66,7 +70,6 @@ function genTypings(midLayer) {
       const name = midLayer[module][path].name;
       const requestBody = midLayer[module][path].requestBody || null;
       if (!requestBody) continue;
-
       data += `    type ${name} = {\n`;
       for (let field in requestBody) {
         const type = requestBody[field].type;
@@ -81,22 +84,28 @@ function genTypings(midLayer) {
     data += `  }\n\n`;
   }
   data += `}`;
+  writeFile(json["outPath"], "typings.d.ts", data);
+}
 
-  fs.writeFile("src/gen/typings.d.ts", data, function (err) {
-    if (err) {
-      console.error("Error: " + err.message);
-    } else {
-      console.log("src/gen/typings.d.ts has been created successfully.");
+function genEnums(comps, json) {
+  let data = ``;
+  for (let key in comps) {
+    if (comps[key]["x-type"] != "enum") continue;
+    const item = comps[key];
+    data += `export const ${key}: MyEnumItemProps[] = [\n`;
+    for (let p in item["properties"]) {
+      const prop = item["properties"][p];
+      data += "\t" + JSON.stringify(prop) + ",\n";
     }
-  });
+    data += `];\n`;
+  }
+  writeFile(json["outPath"], "enums.ts", data);
 }
 
 async function genCode(json) {
   try {
     openapi = await getJsonFromUrl(json["url"]);
-
     let midLayer = [];
-
     for (let path in openapi.paths) {
       if (!path.startsWith(json["module"])) continue;
       for (let method in openapi.paths[path]) {
@@ -105,7 +114,6 @@ async function genCode(json) {
         const moduleName = t1[0];
         const controllerName = t1[1];
         // console.log(moduleName, controllerName);
-        // if (moduleName !== "Admin") continue;
         const requestBody = operation.requestBody;
 
         if (!midLayer[controllerName]) midLayer[controllerName] = {};
@@ -125,19 +133,14 @@ async function genCode(json) {
         }
 
         midLayer[controllerName][path] = item;
-        // console.log(item);
-        // console.log({ path, method, module: operation["x-module-name"] });
       }
     }
-    // console.log(midLayer);
-    genApis(midLayer);
-    genTypings(midLayer);
+    genApis(midLayer, json);
+    genTypings(midLayer, json);
+    genEnums(openapi.components, json);
   } catch (error) {
     console.error(error);
   }
 }
-// // 使用函数
-// (async () => {
 
-// })();
 module.exports = genCode;
