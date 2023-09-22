@@ -42,15 +42,18 @@ export const Apis = {
       //   console.log("\t" + path);
       const summary = midLayer[module][path].summary;
       const requestBody = midLayer[module][path].requestBody || null;
+      const isDownload = midLayer[module][path].isDownload
+        ? ", responseType: 'blob'"
+        : "";
       // const typeName = snakeToPascal(summary);
       const name = midLayer[module][path].name;
       if (requestBody) {
         data += `    ${name}(data: ApiTypes.${module}.${name}): Promise<MyResponseType> {
-      return request("${path}", { data });
+      return request("${path}", { data${isDownload} });
     },\n`;
       } else {
         data += `    ${name}(data = {}): Promise<MyResponseType> {
-      return request("${path}", { data });
+      return request("${path}", { data${isDownload} });
     },\n`;
       }
     }
@@ -123,6 +126,7 @@ async function genCode(json) {
           name: snakeToPascal(operation["summary"]),
           summary: operation.summary,
           description: operation.description,
+          isDownload: operation["x-is-download"],
         };
 
         if (requestBody != null) {
