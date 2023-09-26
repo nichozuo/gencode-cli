@@ -91,16 +91,28 @@ function genTypings(midLayer, json) {
 }
 
 function genEnums(comps, json) {
-  let data = ``;
+  let data = (data1 = ``);
   for (let key in comps) {
     if (comps[key]["x-type"] != "enum") continue;
     const item = comps[key];
+    data += `// ${comps[key]["title"]}\n`;
     data += `export const ${key}: MyEnumItemProps[] = [\n`;
     for (let p in item["properties"]) {
       const prop = item["properties"][p];
       data += "\t" + JSON.stringify(prop) + ",\n";
     }
     data += `];\n`;
+
+    data1 = `import { MyProFormEnum } from '@/common';
+import { ${key} } from '@/gen/enums';
+
+export default function My${key}({ ...rest }) {
+  return <MyProFormEnum name="${item["x-field"] ?? ""}" label="${
+      item["title"]
+    }" enums={${key}} {...rest} />;
+}
+    `;
+    writeFile(json["outPath"] + "/components", `My${key}.tsx`, data1);
   }
   writeFile(json["outPath"], "enums.ts", data);
 }
