@@ -2,8 +2,9 @@ const axios = require("axios");
 const _ = require("lodash");
 const fs = require("fs");
 const path = require("path");
+const { exit } = require("process");
 
-async function getJsonFromUrl(url) {
+async function getOpenAPI(url) {
   try {
     const response = await axios.get(url);
     return response.data;
@@ -29,11 +30,8 @@ function writeFile(dir, fileName, fileContent) {
   });
 }
 
-function genApis(midLayer, json) {
-  let data = `import { request } from '@umijs/max';
-
-export const Apis = {
-`;
+function genApis(midLayer, config) {
+  let data = `${config["apis"]["firstLine"]}\n\n` + `export const Apis = {\n`;
   let docs = {};
   for (let module in midLayer) {
     // console.log(module);
@@ -60,10 +58,15 @@ export const Apis = {
     data += `\t},\n`;
   }
   data += `}`;
-  writeFile(json["outPath"], "Apis.ts", data);
+  writeFile(config["outPath"], "Apis.ts", data);
 }
 
-function genTypings(midLayer, json) {
+function processType(type) {
+  if (type.startsWith("mimes:")) return "any";
+  return type;
+}
+
+function genTypings(midLayer, config) {
   let data = `declare namespace ApiTypes {
 `;
   let docs = {};
@@ -75,7 +78,9 @@ function genTypings(midLayer, json) {
       if (!requestBody) continue;
       data += `    type ${name} = {\n`;
       for (let field in requestBody) {
-        const type = requestBody[field].type;
+        // 如果field带有*，则过滤
+        if (field.indexOf("*") != -1) continue;
+        const type = processType(requestBody[field].type);
         const description = requestBody[field].description;
         const required = requestBody[field].required;
         data += `      ${field}${
@@ -87,10 +92,10 @@ function genTypings(midLayer, json) {
     data += `  }\n\n`;
   }
   data += `}`;
-  writeFile(json["outPath"], "typings.d.ts", data);
+  writeFile(config["outPath"], "typings.d.ts", data);
 }
 
-function genEnums(comps, json) {
+function genEnums(comps, config) {
   let data = (data1 = ``);
   for (let key in comps) {
     if (comps[key]["x-type"] != "enum") continue;
@@ -112,48 +117,54 @@ export default function My${key}({ ...rest }) {
     }" enums={${key}} {...rest} />;
 }
     `;
-    writeFile(json["outPath"] + "/components", `My${key}.tsx`, data1);
+    writeFile(config["outPath"] + "/components", `My${key}.tsx`, data1);
   }
-  writeFile(json["outPath"], "enums.ts", data);
+  writeFile(config["outPath"], "enums.ts", data);
 }
 
-async function genCode(json) {
-  try {
-    openapi = await getJsonFromUrl(json["url"]);
-    let midLayer = [];
-    for (let path in openapi.paths) {
-      if (!path.startsWith(json["module"])) continue;
-      for (let method in openapi.paths[path]) {
-        const operation = openapi.paths[path][method];
-        const t1 = operation["tags"][0].replace("Controller", "").split("/");
-        const moduleName = t1[0];
-        const controllerName = t1[1];
-        // console.log(moduleName, controllerName);
-        const requestBody = operation.requestBody;
+function genMidLayer(openapi, config) {
+  let midLayer = [];
+  for (let path in openapi.paths) {
+    if (!path.startsWith(config["module"])) continue;
+    for (let method in openapi.paths[path]) {
+      const operation = openapi.paths[path][method];
+      const t1 = operation["tags"][0].replace("Controller", "").split("/");
+      const moduleName = t1[0];
+      const controllerName = t1[1];
+      // console.log(moduleName, controllerName);
+      const requestBody = operation.requestBody;
 
-        if (!midLayer[controllerName]) midLayer[controllerName] = {};
+      if (!midLayer[controllerName]) midLayer[controllerName] = {};
 
-        const item = {
-          method,
-          name: snakeToPascal(operation["summary"]),
-          summary: operation.summary,
-          description: operation.description,
-          isDownload: operation["x-is-download"],
-        };
+      const item = {
+        method,
+        name: snakeToPascal(operation["summary"]),
+        summary: operation.summary,
+        description: operation.description,
+        isDownload: operation["x-is-download"],
+      };
 
-        if (requestBody != null) {
-          const properties =
-            requestBody.content["application/x-www-form-urlencoded"].schema
-              .properties;
-          item["requestBody"] = properties;
-        }
-
-        midLayer[controllerName][path] = item;
+      if (requestBody != null) {
+        const properties =
+          requestBody.content["application/x-www-form-urlencoded"].schema
+            .properties;
+        item["requestBody"] = properties;
       }
+
+      midLayer[controllerName][path] = item;
     }
-    genApis(midLayer, json);
-    genTypings(midLayer, json);
-    genEnums(openapi.components, json);
+  }
+  console.log("midLayer", midLayer);
+  return midLayer;
+}
+
+async function genCode(config) {
+  try {
+    openapi = await getOpenAPI(config["url"]);
+    const midLayer = genMidLayer(openapi, config);
+    genApis(midLayer, config);
+    genTypings(midLayer, config);
+    genEnums(openapi.components, config);
   } catch (error) {
     console.error(error);
   }
