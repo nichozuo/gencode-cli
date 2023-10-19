@@ -3,5 +3,6 @@
   "module": "/admin",
   "apis": {
     "firstLine": "import { request } from '@/common';"
-  }
+  },
+  "component": false
 }

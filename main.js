@@ -12,6 +12,7 @@ const defaultConfig = {
   apis: {
     firstLine: "import { request } from '@umijs/max';",
   },
+  components: true,
 };
 
 function getUserConfig() {
@@ -20,7 +21,11 @@ function getUserConfig() {
     return JSON.parse(fileContent);
   } else {
     console.log("gencode.json 文件不存在，自动生成默认配置文件");
-    fs.writeFileSync(defaultConfig, JSON.stringify(config, null, 2), "utf8");
+    fs.writeFileSync(
+      configFilePath,
+      JSON.stringify(defaultConfig, null, 2),
+      "utf8"
+    );
     return defaultConfig;
   }
 }
@@ -55,5 +60,5 @@ try {
   // 生成新的文件
   genCode(config);
 } catch (err) {
-  console.error("Error reading or parsing file", err);
+  console.log("err", err.message);
 }

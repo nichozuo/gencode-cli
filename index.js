@@ -9,7 +9,7 @@ async function getOpenAPI(url) {
     const response = await axios.get(url);
     return response.data;
   } catch (error) {
-    console.error("请求错误", url, error);
+    throw new Error(`请求错误: ${url}`);
   }
 }
 
@@ -108,6 +108,7 @@ function genEnums(comps, config) {
     }
     data += `];\n`;
 
+    if (config["components"] == false) continue;
     data1 = `import { MyProFormEnum } from '@/common';
 import { ${key} } from '@/gen/enums';
 
@@ -159,15 +160,11 @@ function genMidLayer(openapi, config) {
 }
 
 async function genCode(config) {
-  try {
-    openapi = await getOpenAPI(config["url"]);
-    const midLayer = genMidLayer(openapi, config);
-    genApis(midLayer, config);
-    genTypings(midLayer, config);
-    genEnums(openapi.components, config);
-  } catch (error) {
-    console.error(error);
-  }
+  openapi = await getOpenAPI(config["url"]);
+  const midLayer = genMidLayer(openapi, config);
+  genApis(midLayer, config);
+  genTypings(midLayer, config);
+  genEnums(openapi.components, config);
 }
 
 module.exports = genCode;
