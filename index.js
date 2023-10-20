@@ -155,7 +155,7 @@ function genMidLayer(openapi, config) {
       midLayer[controllerName][path] = item;
     }
   }
-  console.log("midLayer", midLayer);
+  // console.log("midLayer", midLayer);
   return midLayer;
 }
 
