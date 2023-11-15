@@ -1,15 +1,15 @@
-const axios = require("axios");
 const _ = require("lodash");
 const fs = require("fs");
 const path = require("path");
-const { exit } = require("process");
 
 async function getOpenAPI(url) {
   try {
-    const response = await axios.get(url);
-    return response.data;
+    const response = await fetch(url);
+    const data = await response.json();
+    return data;
   } catch (error) {
-    throw new Error(`请求错误: ${url}`);
+    // console.log("请求错误", error.message);
+    throw new Error(`请求错误: ${url} ${error.message}`);
   }
 }
 
@@ -32,13 +32,11 @@ function writeFile(dir, fileName, fileContent) {
 
 function genApis(midLayer, config) {
   let data = `${config["apis"]["firstLine"]}\n\n` + `export const Apis = {\n`;
-  let docs = {};
   for (let module in midLayer) {
     // console.log(module);
     data += `  ${module}: {\n`;
     for (let path in midLayer[module]) {
       //   console.log("\t" + path);
-      const summary = midLayer[module][path].summary;
       const requestBody = midLayer[module][path].requestBody || null;
       const isDownload = midLayer[module][path].isDownload
         ? ", responseType: 'blob'"
@@ -69,7 +67,6 @@ function processType(type) {
 function genTypings(midLayer, config) {
   let data = `declare namespace ApiTypes {
 `;
-  let docs = {};
   for (let module in midLayer) {
     data += `  namespace ${module} {\n`;
     for (let path in midLayer[module]) {
@@ -130,7 +127,6 @@ function genMidLayer(openapi, config) {
     for (let method in openapi.paths[path]) {
       const operation = openapi.paths[path][method];
       const t1 = operation["tags"][0].replace("Controller", "").split("/");
-      const moduleName = t1[0];
       const controllerName = t1[1];
       // console.log(moduleName, controllerName);
       const requestBody = operation.requestBody;
@@ -160,8 +156,11 @@ function genMidLayer(openapi, config) {
 }
 
 async function genCode(config) {
+  console.log("开始请求...");
   openapi = await getOpenAPI(config["url"]);
+  console.log("开始解析中间层...");
   const midLayer = genMidLayer(openapi, config);
+  console.log("开始生成代码...");
   genApis(midLayer, config);
   genTypings(midLayer, config);
   genEnums(openapi.components, config);

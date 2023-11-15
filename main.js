@@ -51,7 +51,7 @@ try {
   // 根据用户的配置文件，或者默认的配置文件，生成配置
   const userConfig = getUserConfig();
   const config = _.merge(defaultConfig, userConfig);
-  console.log(config);
+  console.log("配置信息", config);
 
   // 删除老的文件
   deleteDirectory(config.outPath);

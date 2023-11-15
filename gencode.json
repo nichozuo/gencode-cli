@@ -1,8 +1,8 @@
 {
-  "url": "http://0.0.0.0:8000/api/docs/openapi",
-  "module": "/admin",
+  "url": "https://gold.szsx.cc/api/docs/openapi",
+  "module": "/customer_look",
   "apis": {
     "firstLine": "import { request } from '@/common';"
   },
-  "component": false
+  "components": false
 }
