@@ -1,12 +1,16 @@
 const _ = require("lodash");
 const fs = require("fs");
 const path = require("path");
+const axios = require("axios");
 
 async function getOpenAPI(url) {
   try {
-    const response = await fetch(url);
-    const data = await response.json();
-    return data;
+    const response = await axios.get(url, {
+      timeout: 5000, // 设置超时时间为5秒
+    });
+    // console.log("response", response.data);
+    // const data = response.data;
+    return response.data;
   } catch (error) {
     // console.log("请求错误", error.message);
     throw new Error(`请求错误: ${url} ${error.message}`);

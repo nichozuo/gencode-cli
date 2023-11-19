@@ -1,6 +1,6 @@
 {
   "name": "nichozuo-gencode-cli",
-  "version": "1.0.9",
+  "version": "1.0.10",
   "description": "",
   "main": "main.js",
   "scripts": {
@@ -13,6 +13,7 @@
     "gencode": "./main.js"
   },
   "dependencies": {
+    "axios": "^1.6.2",
     "lodash": "^4.17.21"
   }
 }
