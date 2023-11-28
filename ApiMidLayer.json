@@ -1,0 +1,42 @@
+{
+  "Admins": {
+    "List": {
+      "path": "/admin/admins/list",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    },
+    "Update": {
+      "path": "/admin/admins/update",
+      "properties": {
+        "name": {
+          "type": "string"
+        }
+      }
+    }
+  },
+  "Assets": {
+    "AssetBuildings": {
+      "List": {
+        "path": "/admin/assets/asset_buildings/list",
+        "properties": {
+          "Name": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "AssetUnits": {
+      "List": {
+        "path": "/admin/assets/asset_units/list",
+        "properties": {
+          "Name": {
+            "type": "string"
+          }
+        }
+      }
+    }
+  }
+}
