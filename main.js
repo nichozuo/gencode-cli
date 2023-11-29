@@ -2,23 +2,15 @@
 const fs = require("fs");
 const _ = require("lodash");
 const path = require("path");
-const genCode = require("./index.js");
+const axios = require("axios");
 const configFilePath = "./gencode.json";
+const genFiles = require("./index");
 
-const defaultConfig = {
-  url: "http://0.0.0.0:8000/api/docs/openapi",
-  module: "/admin",
-  outPath: "./src/gen/",
-  apis: {
-    firstLine: "import { request } from '@umijs/max';",
-  },
-  components: true,
-};
-
-function getUserConfig() {
+function getConfig() {
+  let userConfig = {};
   if (fs.existsSync(configFilePath)) {
     const fileContent = fs.readFileSync(configFilePath, "utf8");
-    return JSON.parse(fileContent);
+    userConfig = JSON.parse(fileContent);
   } else {
     console.log("gencode.json 文件不存在，自动生成默认配置文件");
     fs.writeFileSync(
@@ -26,8 +18,20 @@ function getUserConfig() {
       JSON.stringify(defaultConfig, null, 2),
       "utf8"
     );
-    return defaultConfig;
+    userConfig = defaultConfig;
   }
+  return _.merge(
+    {
+      url: "http://0.0.0.0:8001/api/docs/openapi",
+      module: "/admin",
+      outPath: "./src/gen/",
+      apis: {
+        firstLine: "import { request } from '@umijs/max';",
+      },
+      components: true,
+    },
+    userConfig
+  );
 }
 
 function deleteDirectory(directoryPath) {
@@ -47,18 +51,35 @@ function deleteDirectory(directoryPath) {
   }
 }
 
-try {
-  // 根据用户的配置文件，或者默认的配置文件，生成配置
-  const userConfig = getUserConfig();
-  const config = _.merge(defaultConfig, userConfig);
-  console.log("配置信息", config);
-
-  // 删除老的文件
-  deleteDirectory(config.outPath);
-  // fs.rm(config.outPath, { recursive: true });
-
-  // 生成新的文件
-  genCode(config);
-} catch (err) {
-  console.log("err", err.message);
+async function fetchOpenApi(url) {
+  try {
+    const response = await axios.get(url, {
+      timeout: 5000,
+    });
+    return response.data;
+  } catch (error) {
+    throw new Error(`请求错误: ${url} ${error.message}`);
+  }
 }
+
+async function main() {
+  try {
+    // 根据用户的配置文件，或者默认的配置文件，生成配置
+    const config = getConfig();
+    console.log("配置信息", config);
+
+    // 删除老的文件
+    deleteDirectory(config.outPath);
+
+    // 获取openapi信息
+    const openapi = await fetchOpenApi(config.url);
+    // console.log("openapi", openapi);
+
+    // 生成新的文件
+    genFiles(openapi, config);
+  } catch (err) {
+    console.log("err", err.message);
+  }
+}
+
+main();

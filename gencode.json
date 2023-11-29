@@ -1,8 +1,8 @@
 {
-  "url": "http://0.0.0.0:8000/api/docs/openapi",
-  "module": "/admin",
+  "url": "http://0.0.0.0:8001/api/docs/openapi",
+  "module": "Admin",
   "apis": {
     "firstLine": "import { request } from '@/common';"
   },
-  "components": false
+  "components": true
 }
