@@ -147,7 +147,8 @@ function _createApiTypesFile(node, level) {
     if (value.path) {
       content += `${tab}type ${key} = {\n`;
       value.params.forEach((param) => {
-        content += `${tab}  ${param.name}: ${param.type}; // ${param.description} \n`;
+        const required = param.required ? "" : "?";
+        content += `${tab}  ${param.name}${required}: ${param.type}; // ${param.description} \n`;
       });
       content += `${tab}};\n`;
     } else {
