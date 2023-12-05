@@ -80,21 +80,22 @@ function createNestedApis(openapi, nestedStructure) {
           const name = _.upperFirst(_.camelCase(content.summary));
           // console.log("name", name, content);
           const params = [];
-          if (!content.requestBody) return;
-          const properties =
-            content["requestBody"]["content"][
-              "application/x-www-form-urlencoded"
-            ]["schema"]["properties"] ?? null;
-          if (properties) {
-            Object.keys(properties).forEach((key) => {
-              if (key.includes("*")) return;
-              params.push({
-                name: key,
-                type: parsePhpTypeToJsType(properties[key].type),
-                description: properties[key].description,
-                required: properties[key].required,
+          if (content.requestBody) {
+            const properties =
+              content["requestBody"]["content"][
+                "application/x-www-form-urlencoded"
+              ]["schema"]["properties"] ?? null;
+            if (properties) {
+              Object.keys(properties).forEach((key) => {
+                if (key.includes("*")) return;
+                params.push({
+                  name: key,
+                  type: parsePhpTypeToJsType(properties[key].type),
+                  description: properties[key].description,
+                  required: properties[key].required,
+                });
               });
-            });
+            }
           }
           if (content.parameters) {
             content.parameters.forEach((param) => {
@@ -119,7 +120,8 @@ function _createApisFile(node, level) {
     if (value.path) {
       value.tags.shift();
       const typeString = ["ApiTypes", ...value.tags].join(".");
-      content += `${tab}${key}(params: ${typeString}): Promise<MyResponseType> {\n`;
+      const hasParams = value.params.length > 0 ? "" : "?";
+      content += `${tab}${key}(params${hasParams}: ${typeString}): Promise<MyResponseType> {\n`;
       content += `${tab}  return request('${value.path}', { params });\n`;
       content += `${tab}},\n`;
     } else {
