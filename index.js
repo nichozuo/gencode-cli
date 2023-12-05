@@ -121,8 +121,8 @@ function _createApisFile(node, level) {
       value.tags.shift();
       const typeString = ["ApiTypes", ...value.tags].join(".");
       const hasParams = value.params.length > 0 ? "" : "?";
-      content += `${tab}${key}(params${hasParams}: ${typeString}): Promise<MyResponseType> {\n`;
-      content += `${tab}  return request('${value.path}', { params });\n`;
+      content += `${tab}${key}(data${hasParams}: ${typeString}): Promise<MyResponseType> {\n`;
+      content += `${tab}  return request('${value.path}', { data });\n`;
       content += `${tab}},\n`;
     } else {
       content += `${tab}${key}: {\n`;
