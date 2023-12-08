@@ -22,13 +22,13 @@ function getConfig() {
   }
   return _.merge(
     {
-      url: "http://0.0.0.0:8001/api/docs/openapi",
-      module: "/admin",
+      url: "http://0.0.0.0:8000/api/docs/openapi",
+      module: "Admin",
       outPath: "./src/gen/",
       apis: {
-        firstLine: "import { request } from '@umijs/max';",
+        firstLine:
+          "import { MyResponseType } from '@/common';\nimport { request } from '@umijs/max';",
       },
-      components: true,
     },
     userConfig
   );

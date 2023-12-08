@@ -1,8 +1,3 @@
 {
-  "url": "http://10.39.65.129:8000/api/docs/openapi",
-  "module": "Admin",
-  "apis": {
-    "firstLine": "import { request } from '@/common';"
-  },
-  "components": true
+  "url": "https://gold.szsx.cc/api/docs/openapi"
 }

@@ -80,6 +80,7 @@ function createNestedApis(openapi, nestedStructure) {
           const name = _.upperFirst(_.camelCase(content.summary));
           // console.log("name", name, content);
           const params = [];
+          const required = [];
           if (content.requestBody) {
             const properties =
               content["requestBody"]["content"][
@@ -94,6 +95,7 @@ function createNestedApis(openapi, nestedStructure) {
                   description: properties[key].description,
                   required: properties[key].required,
                 });
+                if (properties[key].required) required.push(key);
               });
             }
           }
@@ -106,6 +108,7 @@ function createNestedApis(openapi, nestedStructure) {
           currentLevel[name].path = path;
           currentLevel[name].tags = [...tags, name];
           currentLevel[name].params = params;
+          currentLevel[name].required = required;
         }
       });
     }
@@ -120,10 +123,17 @@ function _createApisFile(node, level) {
     if (value.path) {
       value.tags.shift();
       const typeString = ["ApiTypes", ...value.tags].join(".");
-      const hasParams = value.params.length > 0 ? "" : "?";
-      content += `${tab}${key}(data${hasParams}: ${typeString}): Promise<MyResponseType> {\n`;
-      content += `${tab}  return request('${value.path}', { data });\n`;
-      content += `${tab}},\n`;
+      const hasParams = value.params.length > 0;
+      if (hasParams) {
+        const isRequired = value.required.length > 0 ? "" : "?";
+        content += `${tab}${key}(data${isRequired}: ${typeString}): Promise<MyResponseType> {\n`;
+        content += `${tab}  return request('${value.path}', { data });\n`;
+        content += `${tab}},\n`;
+      } else {
+        content += `${tab}${key}(): Promise<MyResponseType> {\n`;
+        content += `${tab}  return request('${value.path}', {});\n`;
+        content += `${tab}},\n`;
+      }
     } else {
       content += `${tab}${key}: {\n`;
       content += _createApisFile(value, level + 1);
@@ -147,6 +157,7 @@ function _createApiTypesFile(node, level) {
   let content = "";
   for (const [key, value] of Object.entries(node)) {
     if (value.path) {
+      if (value.params.length == 0) continue;
       content += `${tab}type ${key} = {\n`;
       value.params.forEach((param) => {
         const required = param.required ? "" : "?";
@@ -167,7 +178,7 @@ function createApiTypesFile(nestedApis, config) {
   content += _createApiTypesFile(nestedApis[config["module"]], 1);
 
   content += `}\n`;
-  writeFile(config["outPath"], "typings.d.ts", content);
+  writeFile(config["outPath"], "ApiTypes.d.ts", content);
 }
 
 function createEnumsFile(openapi, config) {
@@ -204,6 +215,26 @@ export default function My${key}({ ...rest }) {
   writeFile(config["outPath"], "enums.ts", data);
 }
 
+function createProEnumsFile(openapi, config) {
+  const comps = openapi.components.schemas;
+  let data = (data1 = ``);
+  for (let key in comps) {
+    if (comps[key]["x-type"] != "enum") continue;
+    const item = comps[key];
+    data += `// ${comps[key]["title"]}\n`;
+    data += `export const ${key}= {\n`;
+    for (let p in item["properties"]) {
+      const prop = item["properties"][p];
+      const _key = prop["value"];
+      const _obj = { text: prop["label"], color: prop["color"] };
+      const _value = JSON.stringify(_obj);
+      data += `  ${_key}: ${_value}, \n`;
+    }
+    data += `};\n\n`;
+  }
+  writeFile(config["outPath"], "Enums.ts", data);
+}
+
 function genFiles(openapi, config) {
   // 生成树形结构
   const nestedStructure = createNestedStructure(openapi);
@@ -220,7 +251,10 @@ function genFiles(openapi, config) {
   createApiTypesFile(nestedApis, config);
 
   // 生成enum文件
-  createEnumsFile(openapi, config);
+  // createEnumsFile(openapi, config);
+
+  // 生成ProEnums文件
+  createProEnumsFile(openapi, config);
 }
 
 module.exports = genFiles;
