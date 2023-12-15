@@ -1,3 +1,4 @@
 {
-  "url": "https://gold.szsx.cc/api/docs/openapi"
+  "url": "http://yt:8000/api/docs/openapi",
+  "module": "Admin"
 }

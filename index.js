@@ -73,6 +73,7 @@ function createNestedApis(openapi, nestedStructure) {
       // console.log(path, method, content);
       const tags = content.tags[0].replace(/Controller$/, "").split("/");
       // console.log("tags", tags);
+      const isDownload = content["x-is-download"] ?? false;
       let currentLevel = nestedStructure;
       tags.forEach((tag, index) => {
         currentLevel = currentLevel[tag];
@@ -109,6 +110,7 @@ function createNestedApis(openapi, nestedStructure) {
           currentLevel[name].tags = [...tags, name];
           currentLevel[name].params = params;
           currentLevel[name].required = required;
+          if (isDownload) currentLevel[name].isDownload = isDownload;
         }
       });
     }
@@ -124,14 +126,15 @@ function _createApisFile(node, level) {
       value.tags.shift();
       const typeString = ["ApiTypes", ...value.tags].join(".");
       const hasParams = value.params.length > 0;
+      const isDownload = value.isDownload ? "responseType: 'blob'," : "";
       if (hasParams) {
         const isRequired = value.required.length > 0 ? "" : "?";
         content += `${tab}${key}(data${isRequired}: ${typeString}): Promise<MyResponseType> {\n`;
-        content += `${tab}  return request('${value.path}', { data });\n`;
+        content += `${tab}  return request('${value.path}', { ${isDownload}data });\n`;
         content += `${tab}},\n`;
       } else {
         content += `${tab}${key}(): Promise<MyResponseType> {\n`;
-        content += `${tab}  return request('${value.path}', {});\n`;
+        content += `${tab}  return request('${value.path}', {${isDownload}});\n`;
         content += `${tab}},\n`;
       }
     } else {
