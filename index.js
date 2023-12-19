@@ -229,7 +229,7 @@ function createProEnumsFile(openapi, config) {
     for (let p in item["properties"]) {
       const prop = item["properties"][p];
       const _key = prop["value"];
-      const _obj = { text: prop["label"], color: prop["color"] };
+      const _obj = { text: prop["label"], color: prop["color"], value: _key };
       const _value = JSON.stringify(_obj);
       data += `  ${_key}: ${_value}, \n`;
     }
