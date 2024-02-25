@@ -1,4 +1,4 @@
 {
-  "url": "https://plat-test.nchl.net/api/docs/openapi",
+  "url": "http://0.0.0.0:8001/api/docs/openapi",
   "module": "Admin"
 }

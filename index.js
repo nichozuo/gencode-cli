@@ -164,7 +164,7 @@ function _createApiTypesFile(node, level) {
       content += `${tab}type ${key} = {\n`;
       value.params.forEach((param) => {
         const required = param.required ? "" : "?";
-        content += `${tab}  ${param.name}${required}: ${param.type}; // ${param.description} \n`;
+        content += `${tab}  "${param.name}"${required}: ${param.type}; // ${param.description} \n`;
       });
       content += `${tab}};\n`;
     } else {
